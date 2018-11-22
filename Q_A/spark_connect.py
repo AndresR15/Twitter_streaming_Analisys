@@ -2,6 +2,16 @@
 import sys, requests
 import pyspark as ps
 
+def main(hashtags):
+	# start connection
+	sc = stream_connection()
+
+	# retreve streamed text, split input into array of words
+	tweet_text = sc.flatmap(lambda line: line.split(" "))
+	# remove all words that arent in the format '#...'
+	hashtags = tweet_text.filter(lambda word: '#' in word)
+
+	# map each hashtag (map reduce to count) 
 
 def stream_connection():
 	# configure spark instance to default
@@ -21,15 +31,6 @@ def stream_connection():
 
 	# pass stream reference back to main
 	return d_stream
-
-def main(hashtags):
-	# start connection
-	sc = stream_connection()
-
-	# retreve streamed text, split input into array of words
-	tweet_text = sc.flatmap(lambda line: line.split(" "))
-	# remove all words that arent in the format '#...'
-	hashtags = tweet_text.filter(lambda word: '#' in word)
 
 def arg_error_check():
 	hashtags = []

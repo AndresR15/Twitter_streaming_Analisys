@@ -9,12 +9,12 @@ import pandas
 
 
 def plot_titter_stats():
-	tweet_data = []
 	try:
 		for tweet in sys.stdin:
 			# for each tweet that comes in, json will parse it into the tweet_data list
 			try:
-				tweet_data.append(json.loads(tweet))
+				tweet_data = json.loads(tweet)
+				
 			except:
 				continue
 

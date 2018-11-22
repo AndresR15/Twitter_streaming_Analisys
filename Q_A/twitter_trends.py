@@ -1,5 +1,5 @@
 #!/usr/bin/env python 
-import sys, re, string, json
+import sys, json, socket
 
 from tweepy.streaming import StreamListener
 from tweepy import OAuthHandler
@@ -13,18 +13,47 @@ CONSUMER_SECRET = 'M81KvgaicyJIaQegdgXcdKDeZrSsJz4AVrGv3yoFwuItQQPMay'
 
 # This is a basic listener that just prints received tweets to stdout.
 # Taken from http://adilmoujahid.com/posts/2014/07/twitter-analytics/
-class tweet_listner(StreamListener, tag_dict):
+class tweet_listner(StreamListener):
 
 	def on_data(self, data):
-		#once data is revived, print to stdout
-		print(data)
+		try:
+			global conn
+			# once data is revived, extract hashtags in tweet
+			tweet = json.load(data)
+			tweet_text = tweet['text']
+
+			# send data to spark 
+			comm.send(str.encode(tweet_text + '\n'))
+		except:
+			# print error
+			print("Error: {}".format(sys.exc_info()[0]))
 		return True
 
 	def on_error(self, status):
-		#if an error is encountered, print it to stdout
+		# if an error is encountered, print it to stdout
 		print(status)
 
+
 def connect_twitter(hashtags):
+	# set up connection to local machine
+
+	#define local port
+	LOCAL_IP = socket.gethostbyname(socket.gethostname()) 
+	PORT = 9009
+
+	# start up local connection (from tutorial slides)
+	conn = None
+	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+	s.bind((TCP_IP, TCP_PORT))
+	s.listen(1)
+	print("Waiting for TCP connection...")
+
+	# if the connection is accepted, proceed
+	conn, addr = s.accept()
+	print("Connected... Starting getting tweets.")
+
+
 	# uses twitter API key to connect
 	auth = OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
 	auth.set_access_token(ACCESS_TOKEN, ACCESS_TOKEN_SECRET)
@@ -45,9 +74,9 @@ def connect_twitter(hashtags):
 
 def arg_error_check():
 	hashtags = []
-	# when no arguments are passed, throw an error  
+	# when no arguments are passed, use default emotions
 	if (len(sys.argv) < 2):
-		raise ValueError("Program requires at least 1 hash tag to follow")
+		hashtags = ['happy', 'sad', 'angry', 'scared', 'excited']
 
 	# otherwise, add the hashtags into the list
 	else:
@@ -61,7 +90,7 @@ def arg_error_check():
 				# if for some reason the input could not be converted to a string
 				raise ValueError("{} could not be converted to string".format(tag))
 		
-		#connect with twitter and filter out using the hashtags provided
-		connect_twitter(hashtags)
+	#connect with twitter and filter out using the hashtags provided
+	connect_twitter(hashtags)
 
 if __name__ == "__main__": arg_error_check()		
