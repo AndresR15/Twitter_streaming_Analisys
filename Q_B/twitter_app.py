@@ -106,7 +106,13 @@ stream = Stream(auth, listener)
 # setup search terms
 # track = ['#tsla, #appl, #goog, #uber, #twtr']
 # track = ['#tsla', '#russia']
-track = ['#russia']
+# topics stocks, countries,
+# stocks
+# countries: #usa, #russia, #germany, #UK, #
+countries = ['#country, #russia, #usa, #germany, #UK, #france, #canada, #australia, #eu']
+stocks = ['#tsla, #appl, #goog, #uber, #twtr, #sbux, #adbe, #amzn, #bidu, #fb']
+track = ['#country, #russia, #usa, #germany, #UK, #france, #canada, #australia, #eu, '
+         '#tsla, #appl, #goog, #uber, #twtr, #sbux, #adbe, #amzn, #bidu, #fb']
 language = ['en']
 locations = [-130,-20,100,50]
 

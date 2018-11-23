@@ -33,16 +33,42 @@ import time
 
 positive_words = open("./positive.txt").readlines()
 negative_words = open("./negative.txt").readlines()
+full_tag_list =['#country', '#russia', '#usa', '#germany', '#UK', '#france', '#canada', '#australia', '#eu',
+                '#tsla', '#appl', '#goog', '#uber', '#twtr', '#sbux', '#adbe', '#amzn', '#bidu', '#fb']
+cat1_tags = ['#country', '#russia', '#usa', '#germany', '#uk', '#france', '#canada', '#australia', '#eu']
+cat2_tags = ['#tsla', '#appl', '#goog', '#uber', '#twtr', '#sbux', '#adbe', '#amzn', '#bidu', '#fb']
+
+cat1_word = 'Countries'
+cat2_word = 'Stocks'
+
+file = open("Chartdata.txt", "w+")
+
+def check_topic(text):
+    text = clean_input(text)
+    for word in text.split(" "):
+        if word.lower() in full_tag_list:
+            return True
+    return False
 
 
-fig = plt.figure()
-ax1 = fig.add_subplot(1,1,1)
-xar = []
-yar = []
+def process_topic(text):
+    text = clean_input(text)
+    tag = determine_topic(text)
+    return tag
 
-def animate(i):
-    ax1.clear()
-    ax1.plot(xar, yar)
+
+def process_sentiment(text):
+    text = clean_input(text)
+    senti = sentiment_analysis(text, positive_words, negative_words)
+    return senti
+
+
+def determine_topic(text):
+    for word in text.split(" "):
+        if word.lower() in cat1_tags:
+            return cat1_word
+        if word.lower() in cat2_tags:
+            return cat2_word
 
 
 def clean_input(input):
@@ -52,21 +78,14 @@ def clean_input(input):
     if type(input) != str:
         raise TypeError("input not a string type")
 
-    # first, lets remove any words that are encapsulated by brackets
-    # since we're looking at song lyrics, this will most likely be words like
-    # (chorus) or (repeat). Since these aren't actual words in the song we can get rid of them
-    temp = re.sub(r'(\(\w*\s*\))', '', input)
-
-    # Remove the word chorus since its not an actual lyric
-    temp = temp.replace("chorus", "")
 
     # next, the input must be stripped of punctuation
     # this is done by replacing them with whitespace
     # apostrophes are left in for now
-    temp = re.sub(r'[^\w\s\']', ' ', temp)
+    temp = re.sub(r'[^\w#]', ' ', input)
 
     # now, any contractions are collapsed by removing the apostrophes
-    temp = re.sub(r'[\']', '', temp)
+    temp = re.sub(r'[\']', '', input)
     # any numbers will also be removed since they hold very little meaning later on
     temp = re.sub(r'[\d]', '', temp)
 
@@ -119,21 +138,20 @@ dataStream = ssc.socketTextStream("twitter",9009)
 #
 #    words.filter(space_split)
 
-# split each tweet into words
-
+# one hole tweet
 tweets = dataStream
 # filter the words to get only hashtags
-# hashtags = words.filter(lambda w: '#' in w)
+hashtags = tweets.filter(check_topic)
 
 # map each hashtag to be a pair of (hashtag,1)
-# hashtag_counts = hashtags.map(lambda x: (x, 1))
+hashtag_counts = hashtags.map(lambda x: (process_topic(x), process_sentiment(x)))
 
 # adding the count of each hashtag to its last count
-# def aggregate_tags_count(new_values, total_sum):
-#     return sum(new_values) + (total_sum or 0)
+def aggregate_tags_count(new_values, total_sum):
+    return sum(new_values) + (total_sum or 0)
 
 # do the aggregation, note that now this is a sequence of RDDs
-# hashtag_totals = hashtag_counts.updateStateByKey(aggregate_tags_count)
+hashtag_totals = hashtag_counts.updateStateByKey(aggregate_tags_count)
 
 
 # process a single time interval
@@ -141,25 +159,16 @@ def process_interval(time, rdd):
     # print a separator
     print("----------- %s -----------" % str(time))
     try:
+        list = []
         for x in rdd.collect():
-            # print(sentiment_main(x))
-            print(x)
-            senti = sentiment_analysis(x, positive_words, negative_words)
-            xar.append(str(time))
-            yar.append(senti)
-        print(xar)
-        print(yar)
-        # # print(rdd)
-        # # sort counts (desc) in this time instance and take top 10
-        # sorted_rdd = rdd.sortBy(lambda x:x[1], False)
-        # top10 = sorted_rdd.take(10)
-        #
-        # # print it nicely
-        # for tag in top10:
-        #     print('{:<40} {}'.format(tag[0], tag[1]))
 
-        ani = animation.FuncAnimation(fig, animate)
-        plt.show()
+            list.append(str(x))
+        print(str(time) + ":" + str(list).replace("(","").replace(")",""))
+        file.write(str(time) + ":" + str(list).replace("(","").replace(")","") + str("\n"))
+
+
+
+
 
     except:
         e = sys.exc_info()[0]
@@ -167,7 +176,7 @@ def process_interval(time, rdd):
 
 
 # do this for every single interval
-tweets.foreachRDD(process_interval)
+hashtag_totals.foreachRDD(process_interval)
 
 
 # start the streaming computation
