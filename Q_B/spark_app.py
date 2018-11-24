@@ -21,11 +21,12 @@
 
 """
 
-from pyspark import SparkConf,SparkContext
+from pyspark import SparkConf, SparkContext
 from pyspark.streaming import StreamingContext
 from pyspark.sql import Row,SQLContext
 import re
 import sys
+import csv
 import requests
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
@@ -34,14 +35,27 @@ import time
 positive_words = open("./positive.txt").readlines()
 negative_words = open("./negative.txt").readlines()
 full_tag_list =['#country', '#russia', '#usa', '#germany', '#UK', '#france', '#canada', '#australia', '#eu',
-                '#tsla', '#appl', '#goog', '#uber', '#twtr', '#sbux', '#adbe', '#amzn', '#bidu', '#fb']
+                '#tsla', '#appl', '#goog', '#uber', '#twtr', '#sbux', '#adbe', '#amzn', '#bidu', '#fb',
+                '#honda', '#toyota', '#ford', '#gmc', '#lincon', '#bmw', '#jeep', '#mini', '#nissan', '#ram',
+                '#sunny', '#cloudy', '#windy', '#rainy', '#hailing', '#snowing', '#cold', '#hot', '#raining', '#thunder',
+                '#processor', '#cpu', '#gpu', '#hdd', '#sdd', '#mouse', '#keyboard', '#monitor', '#pc', '#motherboard']
+
 cat1_tags = ['#country', '#russia', '#usa', '#germany', '#uk', '#france', '#canada', '#australia', '#eu']
 cat2_tags = ['#tsla', '#appl', '#goog', '#uber', '#twtr', '#sbux', '#adbe', '#amzn', '#bidu', '#fb']
+cat3_tags = ['#honda', '#toyota', '#ford', '#gmc', '#lincon', '#bmw', '#jeep', '#mini', '#nissan', '#ram']
+cat4_tags = ['#sunny', '#cloudy', '#windy', '#rainy', '#hailing', '#snowing', '#cold', '#hot', '#raining', '#thunder']
+cat5_tags = ['#processor', '#cpu', '#gpu', '#hdd', '#sdd', '#mouse', '#keyboard', '#monitor', '#pc', '#motherboard']
 
 cat1_word = 'Countries'
 cat2_word = 'Stocks'
+cat3_word = 'Car Brands'
+cat4_word = 'Weather'
+cat5_word = 'Computer Part'
 
-file = open("Chartdata.txt", "w+")
+
+output_file = open("output.csv", "a+")
+writer = csv.writer(output_file)
+writer.writerow(["Time", cat1_word, cat2_word, cat3_word, cat4_word, cat5_word])
 
 def check_topic(text):
     text = clean_input(text)
@@ -69,6 +83,12 @@ def determine_topic(text):
             return cat1_word
         if word.lower() in cat2_tags:
             return cat2_word
+        if word.lower() in cat3_tags:
+            return cat3_word
+        if word.lower() in cat4_tags:
+            return cat4_word
+        if word.lower() in cat5_tags:
+            return cat5_word
 
 
 def clean_input(input):
@@ -159,15 +179,17 @@ def process_interval(time, rdd):
     # print a separator
     print("----------- %s -----------" % str(time))
     try:
-        list = []
+        dictionary = {}
+        dictionary[cat1_word] = ''
+        dictionary[cat2_word] = ''
+        dictionary[cat3_word] = ''
+        dictionary[cat4_word] = ''
+        dictionary[cat5_word] = ''
         for x in rdd.collect():
-
-            list.append(str(x))
-        print(str(time) + ":" + str(list).replace("(","").replace(")",""))
-        file.write(str(time) + ":" + str(list).replace("(","").replace(")","") + str("\n"))
-
-
-
+            dictionary[x[0]] = x[1]
+        print("{},{},{},{},{},{}".format(str(time).split(" ")[1], dictionary[cat1_word], dictionary[cat2_word],
+                                         dictionary[cat3_word], dictionary[cat4_word], dictionary[cat5_word]),
+              file=output_file)
 
 
     except:
@@ -183,7 +205,6 @@ hashtag_totals.foreachRDD(process_interval)
 ssc.start()
 # wait for the streaming to finish
 ssc.awaitTermination()
-
 
 
 
