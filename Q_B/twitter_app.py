@@ -112,7 +112,12 @@ stream = Stream(auth, listener)
 countries = ['#country, #russia, #usa, #germany, #UK, #france, #canada, #australia, #eu']
 stocks = ['#tsla, #appl, #goog, #uber, #twtr, #sbux, #adbe, #amzn, #bidu, #fb']
 track = ['#country, #russia, #usa, #germany, #UK, #france, #canada, #australia, #eu, '
-         '#tsla, #appl, #goog, #uber, #twtr, #sbux, #adbe, #amzn, #bidu, #fb']
+         '#tsla, #appl, #goog, #uber, #twtr, #sbux, #adbe, #amzn, #bidu, #fb'
+         '#honda, #toyota, #ford, #gmc, #lincon, #bmw, #jeep, #mini, #nissan, #ram'
+         '#sunny, #cloudy, #windy, #rainy, #hailing, #snowing, #cold, #hot, #raining, #thunder'
+         '#processor, #cpu, #gpu, #hdd, #sdd, #mouse, #keyboard, #monitor, #pc, #motherboard'
+
+         ]
 language = ['en']
 locations = [-130,-20,100,50]
 
