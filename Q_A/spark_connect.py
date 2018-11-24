@@ -3,14 +3,16 @@
 # built from the tutorial template 
 import sys, requests
 import pyspark as ps
+from pyspark import SparkConf,SparkContext
 import pyspark.streaming as pss
+from pyspark.sql import Row,SQLContext
 
 def main(hashtags):
 	# start connection
 	# configure spark instance to default
-	config = ps.SparkConf()
+	config = SparkConf()
 	config.setAppName("Twitter_Stream_Analasys")
-	s_context = ps.SparkContext(conf = config)
+	s_context = SparkContext(conf = config)
 	# To prevent drowing the terminal, only log error messages?
 	s_context.setLogLevel("ERROR")
 
@@ -42,6 +44,9 @@ def main(hashtags):
 	# do this for every single interval
 	hashtag_totals.foreachRDD(process_interval)
 
+	#set up sql 
+	sql_context = get_sql_context_instance(s_context)
+
 	# start the streaming computation
 	s_stream_context.start()
 	# wait for the streaming to finish
@@ -53,7 +58,21 @@ def process_interval(time, rdd):
 	print("----------- %s -----------" % str(time))
 	try:
 		for tag in rdd.collect():
-			print(tag)
+			# Get spark sql singleton context from the current context
+			sql_context = get_sql_context_instance(rdd.context)
+			# convert the RDD to Row RDD
+			row_rdd = rdd.map(lambda w: Row(hashtag=w[0], hashtag_count=w[1]))
+
+			# create a DF from the Row RDD
+			hashtags_df = sql_context.createDataFrame(row_rdd)
+			# Register the dataframe as table
+			hashtags_df.registerTempTable("hashtags")
+			# print out all hashtags with teir counts 
+			
+			hashtag_counts_df = sql_context.sql("select hashtag, hashtag_count from hashtags")
+			hashtag_counts_df.show()
+			# call this method to prepare top 10 hashtags DF and send them
+			send_df_to_dashboard(hashtag_counts_df)
 
 	except:
 		e = sys.exc_info()[0]
@@ -87,10 +106,27 @@ def arg_error_check():
 	main(hashtags)
 
 def check_topic(text):
-    for word in text.split(" "):
-        if word.lower() in hashtags:
-            return True
-    return False
+	for word in text.split(" "):
+		if word.lower() in hashtags:
+			return True
+	return False
+
+def get_sql_context_instance(spark_context):
+	if ('sqlContextSingletonInstance' not in globals()):
+		globals()['sqlContextSingletonInstance'] = SQLContext(spark_context)
+	return globals()['sqlContextSingletonInstance']    
+
+def send_df_to_dashboard(df):
+	# extract the hashtags from dataframe and convert them into array
+	tags = [str(t.hashtag) for t in df.select("hashtag").collect()]
+	
+	# extract the counts from dataframe and convert them into array
+	tags_count = [p.hashtag_count for p in df.select("hashtag_count").collect()]
+	
+	# initialize and send the data through REST API
+	url = 'http://192.168.0.20:5002/updateData'
+	request_data = {'label': str(top_tags), 'data': str(tags_count)}
+	response = requests.post(url, data=request_data)    
 
 if __name__ == "__main__": arg_error_check()	
 
