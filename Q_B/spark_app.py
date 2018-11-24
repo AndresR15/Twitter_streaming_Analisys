@@ -32,8 +32,11 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import time
 
+# Words used for sentiment analysis
 positive_words = open("./positive.txt").readlines()
 negative_words = open("./negative.txt").readlines()
+
+# Full list of tags for inital checking
 full_tag_list =['#country', '#russia', '#usa', '#germany', '#UK', '#france', '#canada', '#australia', '#eu',
                 '#tsla', '#appl', '#goog', '#uber', '#twtr', '#sbux', '#adbe', '#amzn', '#bidu', '#fb',
                 '#honda', '#toyota', '#ford', '#gmc', '#lincon', '#bmw', '#jeep', '#mini', '#nissan', '#ram',
