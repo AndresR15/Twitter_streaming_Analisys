@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 
 # built from the tutorial template 
+# data visualization implementation copied from
+# https://www.toptal.com/apache/apache-spark-streaming-twitter
+
 import sys, requests
 import pyspark as ps
 from pyspark import SparkConf,SparkContext
@@ -33,10 +36,10 @@ def main(hashtags):
 	# remove all words that arent emotions'
 	words = socket_ts.flatMap(lambda line: line.split(" "))
 
-	hashtags = words.filter(check_topic)
+	i_hashtags = words.filter(check_topic)
 	
 	# map each hashtag (map reduce to count)
-	hashtag_count = hashtags.map(lambda x: (x.lower(), 1))	
+	hashtag_count = i_hashtags.map(lambda x: (x.lower(), 1))	
 
 	# do the aggregation, note that now this is a sequence of RDDs
 	hashtag_totals = hashtag_count.updateStateByKey(aggregate_tags_count)
@@ -49,8 +52,12 @@ def main(hashtags):
 
 	# start the streaming computation
 	s_stream_context.start()
-	# wait for the streaming to finish
-	s_stream_context.awaitTermination()
+
+	try:
+		# wait for the streaming to finish
+		s_stream_context.awaitTermination()
+	except KeyboardInterrupt:
+		print("\nSpark shutting down\n")
 
 # process a single time interval
 def process_interval(time, rdd):
@@ -60,6 +67,7 @@ def process_interval(time, rdd):
 		for tag in rdd.collect():
 			# Get spark sql singleton context from the current context
 			sql_context = get_sql_context_instance(rdd.context)
+
 			# convert the RDD to Row RDD
 			row_rdd = rdd.map(lambda w: Row(hashtag=w[0], hashtag_count=w[1]))
 
@@ -68,7 +76,7 @@ def process_interval(time, rdd):
 			# Register the dataframe as table
 			hashtags_df.registerTempTable("hashtags")
 			# print out all hashtags with teir counts 
-			
+
 			hashtag_counts_df = sql_context.sql("select hashtag, hashtag_count from hashtags")
 			hashtag_counts_df.show()
 			# call this method to prepare top 10 hashtags DF and send them
@@ -88,7 +96,7 @@ def arg_error_check():
 	global hashtags
 	# when no arguments are passed, use default emotions
 	if (len(sys.argv) < 2):
-		hashtags = ['#pop', '#rock', '#jazz', '#hiphop', '#christmasmusic']
+		hashtags = ['#blockchain', '#ai', '#iot', '#bigdata', '#vr']
 
 	# otherwise, add the hashtags into the list
 	else:
@@ -119,14 +127,17 @@ def get_sql_context_instance(spark_context):
 def send_df_to_dashboard(df):
 	# extract the hashtags from dataframe and convert them into array
 	tags = [str(t.hashtag) for t in df.select("hashtag").collect()]
-	
+
 	# extract the counts from dataframe and convert them into array
 	tags_count = [p.hashtag_count for p in df.select("hashtag_count").collect()]
-	
+
 	# initialize and send the data through REST API
 	url = 'http://192.168.0.20:5002/updateData'
-	request_data = {'label': str(top_tags), 'data': str(tags_count)}
-	response = requests.post(url, data=request_data)    
+
+	request_data = {'label': str(tags), 'data': str(tags_count)}
+
+	response = requests.post(url, data=request_data) 
+
 
 if __name__ == "__main__": arg_error_check()	
 

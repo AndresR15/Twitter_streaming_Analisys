@@ -78,7 +78,7 @@ def arg_error_check():
 	hashtags = []
 	# when no arguments are passed, use default emotions
 	if (len(sys.argv) < 2):
-		hashtags = ['#pop', '#rock', '#jazz', '#hiphop', '#christmasmusic']
+		hashtags = ['#blockchain', '#ai', '#iot', '#bigdata', '#vr']
 
 	# otherwise, add the hashtags into the list
 	else:
