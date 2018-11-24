@@ -1,0 +1,22 @@
+Setting default log level to "WARN".
+To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).
+[Stage 0:>                                                          (0 + 1) / 1][Stage 2:>                                                          (0 + 4) / 4][Stage 2:>                  (0 + 3) / 4][Stage 3:>                  (0 + 1) / 1][Stage 3:>                                                          (0 + 1) / 1]Traceback (most recent call last):
+  File "spark_connect.py", line 86, in <module>
+    if __name__ == "__main__": arg_error_check()	
+  File "spark_connect.py", line 84, in arg_error_check
+    main(hashtags)
+  File "spark_connect.py", line 43, in main
+    s_stream_context.awaitTermination()
+  File "/Library/Frameworks/Python.framework/Versions/3.7/lib/python3.7/site-packages/pyspark/streaming/context.py", line 192, in awaitTermination
+    self._jssc.awaitTermination()
+  File "/Library/Frameworks/Python.framework/Versions/3.7/lib/python3.7/site-packages/py4j/java_gateway.py", line 1255, in __call__
+    answer = self.gateway_client.send_command(command)
+  File "/Library/Frameworks/Python.framework/Versions/3.7/lib/python3.7/site-packages/py4j/java_gateway.py", line 985, in send_command
+    response = connection.send_command(command)
+  File "/Library/Frameworks/Python.framework/Versions/3.7/lib/python3.7/site-packages/py4j/java_gateway.py", line 1152, in send_command
+    answer = smart_decode(self.stream.readline()[:-1])
+  File "/Library/Frameworks/Python.framework/Versions/3.7/lib/python3.7/socket.py", line 589, in readinto
+    return self._sock.recv_into(b)
+  File "/Library/Frameworks/Python.framework/Versions/3.7/lib/python3.7/site-packages/pyspark/context.py", line 252, in signal_handler
+    raise KeyboardInterrupt()
+KeyboardInterrupt

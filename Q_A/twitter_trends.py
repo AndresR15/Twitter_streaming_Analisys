@@ -3,13 +3,14 @@ import sys, json, socket
 
 from tweepy.streaming import StreamListener
 from tweepy import OAuthHandler
+from tweepy import API
 from tweepy import Stream
 
 # Constants (Twitter API access)
-ACCESS_TOKEN = '2591998746-Mx8ZHsXJHzIxAaD2IxYfmzYuL3pYNVnvWoHZgR5'
-ACCESS_TOKEN_SECRET = 'LJDvEa0jL7QJXxql0NVrULTAniLobe2TAAlnBdXRfm1xF'
-CONSUMER_KEY = 'ZAPfZLcBhYEBCeRSAK5PqkTT7'
-CONSUMER_SECRET = 'M81KvgaicyJIaQegdgXcdKDeZrSsJz4AVrGv3yoFwuItQQPMay'
+ACCESS_TOKEN ="1062409428710973440-nfSRK68aDH1SF0KzD8k3qNhh2BZVk3"
+ACCESS_TOKEN_SECRET ="M2WkexSpQvP7mFiYZsd7AR1qUXKiNCZS5MAxetQuqEDDe"
+CONSUMER_KEY ="op0ObDPn4TkrkMK6ThmdI5eW2"
+CONSUMER_SECRET ="bPXLxN3EX04RAVrmnI7P2fTAjXbHbyiK2mynwOUfZ3BbRuei1r"
 
 # This is a basic listener that just prints received tweets to stdout.
 # Taken from http://adilmoujahid.com/posts/2014/07/twitter-analytics/
@@ -17,16 +18,22 @@ class tweet_listner(StreamListener):
 
 	def on_data(self, data):
 		try:
-			global conn
-			# once data is revived, extract hashtags in tweet
-			tweet = json.load(data)
-			tweet_text = tweet['text']
+			
 
-			# send data to spark 
-			comm.send(str.encode(tweet_text + '\n'))
+			# load the tweet JSON, get pure text
+			full_tweet = json.loads(data)
+			tweet_text = full_tweet['text']
+
+			# print the tweet plus a separator
+			print ("------------------------------------------")
+			print (tweet_text + '\n')
+
+			# send it to spark
+			conn.send(str.encode(tweet_text + '\n'))
 		except:
 			# print error
-			print("Error: {}".format(sys.exc_info()[0]))
+			e = sys.exc_info()[0]
+			print("Error: %s" % e)
 		return True
 
 	def on_error(self, status):
@@ -36,8 +43,8 @@ class tweet_listner(StreamListener):
 
 def connect_twitter(hashtags):
 	# set up connection to local machine
-
-	#define local port
+	global conn
+	#get local port
 	LOCAL_IP = socket.gethostbyname(socket.gethostname()) 
 	PORT = 9009
 
@@ -45,7 +52,7 @@ def connect_twitter(hashtags):
 	conn = None
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-	s.bind((TCP_IP, TCP_PORT))
+	s.bind((LOCAL_IP, PORT))
 	s.listen(1)
 	print("Waiting for TCP connection...")
 
@@ -54,29 +61,24 @@ def connect_twitter(hashtags):
 	print("Connected... Starting getting tweets.")
 
 
-	# uses twitter API key to connect
+	# uses twitter API key to connect and start stream with the provided keys
+	listener = tweet_listner()
 	auth = OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
 	auth.set_access_token(ACCESS_TOKEN, ACCESS_TOKEN_SECRET)
+	stream = Stream(auth, listener)
 
-	# Starts stream with the provided keys
-	stream = Stream(auth, tweet_listner())
-
-	# create a dictionary to map hashtags with # of occurrences
-	hash_count = {}
-	for tag in hashtags:
-		hash_count[str(tag)] = 0
-
+	language = ['en']
 	try:
-		# Only shows tweets containing the specified hashtags 
-		stream.filter(track=hashtags, hash_count)
+		# only shows tweets containing the specified hashtags 
+		stream.filter(track=hashtags, languages=language)
 	except KeyboardInterrupt:
-		exit()
+		s.shutdown(socket.SHUT_RD)
 
 def arg_error_check():
 	hashtags = []
 	# when no arguments are passed, use default emotions
 	if (len(sys.argv) < 2):
-		hashtags = ['happy', 'sad', 'angry', 'scared', 'excited']
+		hashtags = ['#pop', '#rock', '#jazz', '#hiphop', '#christmasmusic']
 
 	# otherwise, add the hashtags into the list
 	else:
@@ -93,4 +95,5 @@ def arg_error_check():
 	#connect with twitter and filter out using the hashtags provided
 	connect_twitter(hashtags)
 
-if __name__ == "__main__": arg_error_check()		
+if __name__ == "__main__": arg_error_check()	
+
