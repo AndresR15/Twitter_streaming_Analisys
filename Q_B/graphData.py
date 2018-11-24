@@ -4,7 +4,7 @@ import ast
 import re
 
 x = np.arange(10)
-file = open("output1.csv", "r+")
+file = open("output.csv", "r+")
 xar = []
 yar1 = []
 yar2 = []
