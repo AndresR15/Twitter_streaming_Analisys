@@ -1,6 +1,5 @@
 // taken from https://www.toptal.com/apache/apache-spark-streaming-twitter
-<script>
-   var ctx = document.getElementById("chart");
+var ctx = document.getElementById("chart");
    var myChart = new Chart(ctx, {
     	type: 'horizontalBar',
     	data: {
@@ -63,4 +62,3 @@
     	myChart.data.datasets[0].data = src_Data;
     	myChart.update();
    },1000);
-</script>
