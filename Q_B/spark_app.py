@@ -28,38 +28,37 @@ import re
 import sys
 import csv
 import requests
-import matplotlib.pyplot as plt
-import matplotlib.animation as animation
-import time
+
 
 # Words used for sentiment analysis
 positive_words = open("./positive.txt").readlines()
 negative_words = open("./negative.txt").readlines()
-
-# Full list of tags for inital checking
-full_tag_list =['#country', '#russia', '#usa', '#germany', '#UK', '#france', '#canada', '#australia', '#eu',
-                '#tsla', '#appl', '#goog', '#uber', '#twtr', '#sbux', '#adbe', '#amzn', '#bidu', '#fb',
-                '#honda', '#toyota', '#ford', '#gmc', '#lincon', '#bmw', '#jeep', '#mini', '#nissan', '#ram',
-                '#sunny', '#cloudy', '#windy', '#rainy', '#hailing', '#snowing', '#cold', '#hot', '#raining', '#thunder',
-                '#processor', '#cpu', '#gpu', '#hdd', '#sdd', '#mouse', '#keyboard', '#monitor', '#pc', '#motherboard']
-
+# list of tags for each topic
 cat1_tags = ['#country', '#russia', '#usa', '#germany', '#uk', '#france', '#canada', '#australia', '#eu']
 cat2_tags = ['#tsla', '#appl', '#goog', '#uber', '#twtr', '#sbux', '#adbe', '#amzn', '#bidu', '#fb']
 cat3_tags = ['#honda', '#toyota', '#ford', '#gmc', '#lincon', '#bmw', '#jeep', '#mini', '#nissan', '#ram']
 cat4_tags = ['#sunny', '#cloudy', '#windy', '#rainy', '#hailing', '#snowing', '#cold', '#hot', '#raining', '#thunder']
 cat5_tags = ['#processor', '#cpu', '#gpu', '#hdd', '#sdd', '#mouse', '#keyboard', '#monitor', '#pc', '#motherboard']
 
+# Full list of tags used to filter tweets
+full_tag_list = cat1_tags + cat2_tags + cat3_tags + cat4_tags + cat5_tags
+
+# Topic words for each category
 cat1_word = 'Countries'
 cat2_word = 'Stocks'
 cat3_word = 'Car Brands'
 cat4_word = 'Weather'
 cat5_word = 'Computer Parts'
 
-
+# Create file to save data to
 output_file = open("output.csv", "a+")
 writer = csv.writer(output_file)
+# Write a line that has all the topic categories so the graphing file knows which topic is which
 writer.writerow(["Time", cat1_word, cat2_word, cat3_word, cat4_word, cat5_word])
 
+
+# Used to filter tweets. Checks if input text has any of the hashtags in the categories above
+# Returns true if tweet contains any of the hashtags, otherwise false
 def check_topic(text):
     text = clean_input(text)
     for word in text.split(" "):
@@ -68,18 +67,22 @@ def check_topic(text):
     return False
 
 
+# Used as intermediate method to find topic of the tweet, first cleans the input data and then calls
+# the determine topic which returns the cat_word associated with the topic
 def process_topic(text):
     text = clean_input(text)
     tag = determine_topic(text)
     return tag
 
-
+# Used as intermediate method to find the sentimental score assiociated with the tweet, first cleans the input
+# data and then calls the sentiment_analysis which returns the score for each tweet passed
 def process_sentiment(text):
     text = clean_input(text)
     senti = sentiment_analysis(text, positive_words, negative_words)
     return senti
 
-
+# determines topic by checking if the tweet is in any of the category tags
+# then return the category word
 def determine_topic(text):
     for word in text.split(" "):
         if word.lower() in cat1_tags:
@@ -93,18 +96,14 @@ def determine_topic(text):
         if word.lower() in cat5_tags:
             return cat5_word
 
-
+# clean input takes the text and removes punctuation, spacing and symbols that are not hashtags
 def clean_input(input):
     # this function will clean the input by removing unnecessary punctuation
 
     # input must be of type string
     if type(input) != str:
         raise TypeError("input not a string type")
-
-
-    # next, the input must be stripped of punctuation
-    # this is done by replacing them with whitespace
-    # apostrophes are left in for now
+    # next, the input must be stripped of punctuation excluding hashtags since we need them
     temp = re.sub(r'[^\w#]', ' ', input)
 
     # now, any contractions are collapsed by removing the apostrophes
@@ -116,6 +115,10 @@ def clean_input(input):
     temp = re.sub(r'[\s]', ' ', temp)
     return temp
 
+# the general idea behind the sentiment method is to is to check if every word in the tweet is positive
+# negative or neutral, if positive increase positive score, if negative increase neagtive score else do nothing
+# Once values are calculate, if positive score is greter than neagtive score * threshhold then positive
+# if negative score is greater than positive score * threshhold then negative
 def sentiment_analysis(text, positive_words, negative_words):
     p_score = 0
     n_score = 0
@@ -136,7 +139,7 @@ def sentiment_analysis(text, positive_words, negative_words):
     else:
         return 0
 
-
+# Spark configuration given to us by you, thank you
 # create spark configuration
 conf = SparkConf()
 conf.setAppName("TwitterStreamApp")
@@ -149,36 +152,29 @@ ssc = StreamingContext(sc, 2)
 ssc.checkpoint("checkpoint_TwitterApp")
 # read data from port 9009
 dataStream = ssc.socketTextStream("twitter",9009)
-
-# reminder - lambda functions are just anonymous functions in one line:
-#
-#   words.flatMap(lambda line: line.split(" "))
-#
-# is exactly equivalent to
-#
-#    def space_split(line):
-#        return line.split(" ")
-#
-#    words.filter(space_split)
-
-# one hole tweet
+# gets one whole tweet
 tweets = dataStream
-# filter the words to get only hashtags
-hashtags = tweets.filter(check_topic)
+# filter the words to tweets with the hashtags we are looking for
+filtered_tweets = tweets.filter(check_topic)
 
-# map each hashtag to be a pair of (hashtag,1)
-hashtag_counts = hashtags.map(lambda x: (process_topic(x), (process_sentiment(x), 1)))
+# map each hashtag to be a pair of (Topic, sentiment value, 1)
+#  with this we can use the count to take the average, and keep track of the sentiment value for each topic
+tweet_sentiScore_counts = filtered_tweets.map(lambda x: (process_topic(x), (process_sentiment(x), 1)))
 
 
-# adding the count of each hashtag to its last count
+# adding the count of each topic to its last count and summing the sentimental score
 def aggregate_tags_count(new_values, total_sum):
+    # since the count is the second value in the array new_values, total_sum
+    # take sum of the count
     count = sum(x[1] for x in new_values) + (total_sum[1] if total_sum else 0)
+    # since the sentiment value is the first value in the array new_values, total_sum
+    # take sum of the the sentiment values
     sent = sum(x[0] for x in new_values) + (total_sum[0] if total_sum else 0)
     return sent, count
 
 
 # do the aggregation, note that now this is a sequence of RDDs
-hashtag_totals = hashtag_counts.updateStateByKey(aggregate_tags_count)
+tweet_totals = tweet_sentiScore_counts.updateStateByKey(aggregate_tags_count)
 
 
 # process a single time interval
@@ -186,6 +182,8 @@ def process_interval(time, rdd):
     # print a separator
     print("----------- %s -----------" % str(time))
     try:
+        # For each process interval create a dictionary and send values from dictionary
+        # to the file
         dictionary = {}
         dictionary[cat1_word] = ''
         dictionary[cat2_word] = ''
@@ -194,10 +192,10 @@ def process_interval(time, rdd):
         dictionary[cat5_word] = ''
         for x in rdd.collect():
             dictionary[x[0]] = x[1][0] / x[1][1]
-        print("{},{},{},{},{},{}".format(str(time).split(" ")[1], dictionary[cat1_word], dictionary[cat2_word],
-                                         dictionary[cat3_word], dictionary[cat4_word], dictionary[cat5_word]),
+        print("{},{},{},{},{},{}".format(str(time).split(" ")[1], dictionary[cat1_word],
+                                         dictionary[cat2_word], dictionary[cat3_word],
+                                         dictionary[cat4_word], dictionary[cat5_word]),
               file=output_file)
-
 
     except:
         e = sys.exc_info()[0]
@@ -205,7 +203,7 @@ def process_interval(time, rdd):
 
 
 # do this for every single interval
-hashtag_totals.foreachRDD(process_interval)
+tweet_totals.foreachRDD(process_interval)
 
 
 # start the streaming computation
