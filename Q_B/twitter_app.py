@@ -33,6 +33,7 @@ from tweepy import API
 from tweepy import Stream
 
 # Replace the values below with yours
+# inserted the private key
 consumer_key="op0ObDPn4TkrkMK6ThmdI5eW2"
 consumer_secret="bPXLxN3EX04RAVrmnI7P2fTAjXbHbyiK2mynwOUfZ3BbRuei1r"
 access_token="1062409428710973440-nfSRK68aDH1SF0KzD8k3qNhh2BZVk3"
@@ -103,14 +104,7 @@ auth = OAuthHandler(consumer_key, consumer_secret)
 auth.set_access_token(access_token, access_token_secret)
 stream = Stream(auth, listener)
 
-# setup search terms
-# track = ['#tsla, #appl, #goog, #uber, #twtr']
-# track = ['#tsla', '#russia']
-# topics stocks, countries,
-# stocks
-# countries: #usa, #russia, #germany, #UK, #
-countries = ['#country, #russia, #usa, #germany, #UK, #france, #canada, #australia, #eu']
-stocks = ['#tsla, #appl, #goog, #uber, #twtr, #sbux, #adbe, #amzn, #bidu, #fb']
+# setup search terms, these are the 5 topic hashtags combined
 track = ['#country, #russia, #usa, #germany, #UK, #france, #canada, #australia, #eu, '
          '#tsla, #appl, #goog, #uber, #twtr, #sbux, #adbe, #amzn, #bidu, #fb'
          '#honda, #toyota, #ford, #gmc, #lincon, #bmw, #jeep, #mini, #nissan, #ram'
@@ -119,6 +113,7 @@ track = ['#country, #russia, #usa, #germany, #UK, #france, #canada, #australia, 
 language = ['en']
 
 # get filtered tweets, forward them to spark until interrupted
+# removed location because that was giving my random tweets that i did not need
 try:
     stream.filter(track=track, languages=language)
 except KeyboardInterrupt:
