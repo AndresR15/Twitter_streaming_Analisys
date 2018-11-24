@@ -1,5 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
+from datetime import datetime
+from datetime import timedelta
+import time
 import ast
 import re
 
@@ -19,44 +22,58 @@ label2 = x[2]
 label3 = x[3]
 label4 = x[4]
 label5 = x[5]
-for line in file:
+startTime = None
+FMT = '%H:%M:%S'
+for i, line in enumerate(file):
+
     values = line.strip().split(",")
-    # print(values)
-    xar.append(values[0])
+
+    controltime = datetime.now()
+
+    if startTime == None:
+        startDate = datetime.strptime(values[0], FMT)
+        startTime = timedelta(hours=startDate.hour,
+                                minutes=startDate.minute,
+                                seconds=startDate.second).total_seconds()
+        xar.append(0)
+    else:
+        newDate = datetime.strptime(values[0], FMT)
+        newTime =  timedelta(hours=newDate.hour,
+                                minutes=newDate.minute,
+                                seconds=newDate.second).total_seconds()
+        tDelta = newTime - startTime
+        xar.append(int(tDelta))
 
     try:
-        yar1.append(int(values[1]))
+        yar1.append(float(values[1]))
     except ValueError:
         yar1.append(0)
         pass
-    
+
     try:
-        yar2.append(int(values[2]))
+        yar2.append(float(values[2]))
     except ValueError:
         yar2.append(0)
         pass
-    
+
     try:
-        yar3.append(int(values[3]))
+        yar3.append(float(values[3]))
     except ValueError:
         yar3.append(0)
         pass
-    
+
     try:
-        yar4.append(int(values[4]))
+        yar4.append(float(values[4]))
     except ValueError:
         yar4.append(0)
         pass
-    
+
     try:
-        yar5.append(int(values[5]))
+        yar5.append(float(values[5]))
     except ValueError:
         yar5.append(0)
         pass
 
-
-print(xar)
-print(yar1)
 
 plt.plot(xar, yar1)
 plt.plot(xar, yar2)

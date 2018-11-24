@@ -50,7 +50,7 @@ cat1_word = 'Countries'
 cat2_word = 'Stocks'
 cat3_word = 'Car Brands'
 cat4_word = 'Weather'
-cat5_word = 'Computer Part'
+cat5_word = 'Computer Parts'
 
 
 output_file = open("output.csv", "a+")
@@ -164,11 +164,15 @@ tweets = dataStream
 hashtags = tweets.filter(check_topic)
 
 # map each hashtag to be a pair of (hashtag,1)
-hashtag_counts = hashtags.map(lambda x: (process_topic(x), process_sentiment(x)))
+hashtag_counts = hashtags.map(lambda x: (process_topic(x), (process_sentiment(x), 1)))
+
 
 # adding the count of each hashtag to its last count
 def aggregate_tags_count(new_values, total_sum):
-    return sum(new_values) + (total_sum or 0)
+    count = sum(x[1] for x in new_values) + (total_sum[1] if total_sum else 0)
+    sent = sum(x[0] for x in new_values) + (total_sum[0] if total_sum else 0)
+    return sent, count
+
 
 # do the aggregation, note that now this is a sequence of RDDs
 hashtag_totals = hashtag_counts.updateStateByKey(aggregate_tags_count)
@@ -186,7 +190,7 @@ def process_interval(time, rdd):
         dictionary[cat4_word] = ''
         dictionary[cat5_word] = ''
         for x in rdd.collect():
-            dictionary[x[0]] = x[1]
+            dictionary[x[0]] = x[1][0] / x[1][1]
         print("{},{},{},{},{},{}".format(str(time).split(" ")[1], dictionary[cat1_word], dictionary[cat2_word],
                                          dictionary[cat3_word], dictionary[cat4_word], dictionary[cat5_word]),
               file=output_file)
