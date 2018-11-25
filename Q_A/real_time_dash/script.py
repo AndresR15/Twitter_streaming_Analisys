@@ -38,8 +38,8 @@ def update_data():
 
 if __name__ == "__main__":
 	LOCAL_IP = socket.gethostbyname(socket.gethostname()) 
-	#LOCAL_IP = "192.168.0.20"
 	app.debug = True
 	app.run(host=LOCAL_IP, port=5002)
+
 
 

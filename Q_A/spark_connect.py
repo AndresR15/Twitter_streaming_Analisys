@@ -4,13 +4,17 @@
 # data visualization implementation copied from
 # https://www.toptal.com/apache/apache-spark-streaming-twitter
 
-import sys, requests
+import sys, requests, socket
 import pyspark as ps
 from pyspark import SparkConf,SparkContext
 import pyspark.streaming as pss
 from pyspark.sql import Row,SQLContext
 
+IP = "192.168.0.20"
+
 def main(hashtags):
+	global IP
+
 	# start connection
 	# configure spark instance to default
 	config = SparkConf()
@@ -131,9 +135,10 @@ def send_df_to_dashboard(df):
 	# extract the counts from dataframe and convert them into array
 	tags_count = [p.hashtag_count for p in df.select("hashtag_count").collect()]
 
-	# initialize and send the data through REST API
-	url = 'http://192.168.0.20:5002/updateData'
+	# set up url with user's ip
+	url = 'http://'+ IP + ':5002/updateData'
 
+	# initialize and send the data through REST API
 	request_data = {'label': str(tags), 'data': str(tags_count)}
 
 	response = requests.post(url, data=request_data) 
