@@ -1,9 +1,0 @@
-1)Run the twitter_app :
-python twitter_app.py
-
-2)Run spark_app as normal:
-spark-submit spark_app.py
-
-the spark_app will create a file called output.csv
-3) Run the graphData.py using:
-python graphData.py output.csv
