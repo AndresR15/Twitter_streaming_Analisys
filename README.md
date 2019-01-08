@@ -1,7 +1,16 @@
 # Twitter_streaming_Analisys
 A assignment 3 for EECS 4431 Fall 2018/19
 
-# how to run Part A
+## Twitter API key
+The *Twitter Developer key* used to develop and test this project has been removed from the final version of twitter_trends.py both in Q_A and Q_B. Your personal developer key will have to be added to these files inorder to run this project.
+Inorder to add an API key, simply edit these variables found at the top of both Q_A/twitter_trends.py and Q_B/twitter_trends.py
+	
+	ACCESS_TOKEN ="..."
+	ACCESS_TOKEN_SECRET ="..."
+	CONSUMER_KEY ="..."
+	CONSUMER_SECRET ="..."
+	
+## How to Run Q_A
 
 1. start Twitter Client
 	
@@ -52,7 +61,7 @@ A assignment 3 for EECS 4431 Fall 2018/19
 ________________________________________________________________________________________
 
 
-# how to run Part B
+## How to Run Q_B
 1. start Twitter Client
 	
 	1.1: open a new terminal window
