@@ -7,10 +7,10 @@ from tweepy import API
 from tweepy import Stream
 
 # Constants (Twitter API access)
-ACCESS_TOKEN ="1062409428710973440-nfSRK68aDH1SF0KzD8k3qNhh2BZVk3"
-ACCESS_TOKEN_SECRET ="M2WkexSpQvP7mFiYZsd7AR1qUXKiNCZS5MAxetQuqEDDe"
-CONSUMER_KEY ="op0ObDPn4TkrkMK6ThmdI5eW2"
-CONSUMER_SECRET ="bPXLxN3EX04RAVrmnI7P2fTAjXbHbyiK2mynwOUfZ3BbRuei1r"
+ACCESS_TOKEN ="..."
+ACCESS_TOKEN_SECRET ="..."
+CONSUMER_KEY ="..."
+CONSUMER_SECRET ="..."
 
 # This is a basic listener that just prints received tweets to stdout.
 # Taken from http://adilmoujahid.com/posts/2014/07/twitter-analytics/

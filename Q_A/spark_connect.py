@@ -10,7 +10,7 @@ from pyspark import SparkConf,SparkContext
 import pyspark.streaming as pss
 from pyspark.sql import Row,SQLContext
 
-IP = "192.168.0.20"
+IP = "000.000.0.00"
 
 def main(hashtags):
 	global IP
